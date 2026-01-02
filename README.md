@@ -1,205 +1,235 @@
-# Password Protection Lab
+# Flask Password Protection Lab
 
-## Introduction
+## Overview
 
-In this lab, you'll implement a secure authentication system that uses password hashing,
-sessions, and route access control to manage user login and logout. This brings together
-all the concepts you’ve learned about authentication so far, but with a critical
-enhancement: users will now verify their identity using a password, and that password
-will be safely hashed and stored in the database.
+This project is a Flask-based backend API that demonstrates **secure password handling** and **session-based authentication** using industry-standard tools. The core focus of the lab is ensuring that **user passwords are never stored or exposed in plaintext** while maintaining a clean, RESTful authentication flow.
 
-Plaintext password storage is one of the most dangerous vulnerabilities in any web
-application. Instead of storing passwords directly, we’ll use Flask-Bcrypt to generate
-one-way encrypted hashes, which can be validated without ever revealing the original
-password.
+The project emphasizes two foundational backend concepts:
 
-You’ll build the full login workflow: signing up new users, verifying credentials on login,
-checking whether a session is active, and logging users out. All of this will happen on the
-Flask backend, while the provided React frontend will automatically reflect the user’s
-authenticated state.
+1. **Password hashing and verification**
+   - User passwords are hashed using `bcrypt` before being stored.
+   - Password hashes are write-only and cannot be read back from the model.
+   - Login attempts are validated by comparing hashes, not plaintext values.
 
-By the end of this lab, you’ll have implemented a secure, production-ready authentication
-system using password hashing and session-based login—essential skills for any backend
-developer working on user-facing applications.
+2. **Session-based authentication**
+   - Logged-in state is maintained using Flask sessions.
+   - Session data persists across requests until explicitly cleared.
+   - Authentication state is enforced entirely on the backend.
 
-## Tools & Resources
+This lab is designed to mirror real-world backend authentication patterns while remaining intentionally small and focused.
 
-- [GitHub Repo](https://github.com/learn-co-curriculum/flask-password-protection-lab)
-- [Flask-Bcrypt](https://flask-bcrypt.readthedocs.io/en/1.0.1/)
+---
 
-## Set Up
+## File Structure
 
-There is some starter code in place for a Flask API backend and a React frontend.
-To get set up, run:
+The project follows a standard Flask application layout with testing support.
 
-```console
-$ pipenv install && pipenv shell
-$ npm install --prefix client
-$ cd server
-$ flask db upgrade head
-```
+flask-password-protection-lab/.pytest_cache/
 
-You can work on this lab by running the tests with `pytest -x`. It will also be
-helpful to see what's happening during the request/response cycle by running the
-app in the browser. You can run the Flask server with:
+flask-password-protection-lab/client/
 
-```console
-$ python app.py
-```
+flask-password-protection-lab/server/instance/
 
-And you can run React in another terminal with:
+flask-password-protection-lab/server/migrations/
 
-```console
-$ npm start --prefix client
-```
+flask-password-protection-lab/server/testing/__pycache__/
 
-You don't have to make any changes to the React code to get this lab working.
+flask-password-protection-lab/server/testing/app_test.py
 
-## Instructions
+flask-password-protection-lab/server/testing/conftest.py
 
-### Task 1: Define the Problem
+flask-password-protection-lab/server/app.py
 
-Our app has three pages:
+flask-password-protection-lab/server/config.py
 
-1. A signup page, where the user enters their username, password, and password
-   confirmation.
-2. A login page, where the user submits their username and password and are then
-   logged in.
-3. A user homepage, which says, "Welcome, ${username}!"
+flask-password-protection-lab/server/models.py
 
-Users should not be able to log in if they enter an incorrect password.
+flask-password-protection-lab/.gitignore
 
-> **Note: we're not covering password validations in this lab, so don't worry
-> about those. Password validation is hard to get right anyway — it's
-> surprisingly easy to produce rules that decrease password security rather than
-> enhance it.**
+flask-password-protection-lab/CONTRIBUTING.md
 
-### Task 2: Determine the Design
+flask-password-protection-lab/LICENSE.md
 
-We need to implement a way for users to sign up, log in, and log out with secure
-passwords.
+flask-password-protection-lab/Pipfile
 
-To complete the lab and get the tests passing, you will need to:
+flask-password-protection-lab/Pipfile.lock
 
-- Add methods to the User model to protect and set the password_hash property and
-  authenticate a user with their password.
+flask-password-protection-lab/pytest.ini
 
-- Create a `Signup` resource with a `post()` method that responds to a
-  `POST /signup` request. It should: create a new user; save their hashed
-  password in the database; save the user's ID in the session object; and return
-  the user object in the JSON response.
+flask-password-protection-lab/README.md
 
-- Create a `CheckSession` resource with a `get()` method that responds to a
-  `GET /check_session` request. If the user is authenticated, return the user
-  object in the JSON response. Otherwise, return an empty response with a 204
-  status code.
+---
 
-- Create a `Login` resource with a `post()` method for logging in that
-  responds to a `POST /login` request and returns the user as JSON.
-  
-- Create a `Logout` resource with a `delete()` method for logging out
-  that responds to a `DELETE /logout` request.
+## Key Files
 
-### Task 3: Develop, Test, and Refine the Code
+- `server/app.py`  
+  Main Flask application. Defines RESTful authentication routes, session logic, and application startup configuration.
 
-#### Step 1: Protect the `password_hash` Property
+- `server/models.py`  
+  SQLAlchemy `User` model and Marshmallow schema. Implements secure password hashing, authentication, and hash protection.
 
-In the User model, add logic to protect the password_property by raising an Exception.
+- `server/config.py`  
+  Application configuration, database initialization, bcrypt setup, and Flask-RESTful wiring.
 
-```python
-# Build method to protect password_hash property
-@hybrid_property
-def password_hash(self):
-    pass
-```
+- `server/testing/app_test.py`  
+  Pytest test cases covering authentication and session behavior.
 
-#### Step 2: Use Bcrypt to Hash the Password
+- `server/testing/conftest.py`  
+  Pytest fixtures for application setup and teardown.
 
-In the User model, use `bcrypt.generate_password_hash` to set the property.
+---
 
-```python
-# Build method to set password hash property using bcrypt.generate_password_hash()
-@password_hash.setter
-def password_hash(self, password):
-    pass
-```
+## Functionality
 
-#### Step 3: Use Bcrypt to Authenticate a User
+### Authentication Flow
 
-In the User model, use `bcrypt.check_password_hash` to verify a user's password.
+Authentication is handled using Flask-RESTful resources and Flask sessions.
 
-```python
-# Build authenticate method that uses bcrypt.check_password_hash()
-def authenticate(self, password):
-    pass
-```
+- A user signs up with a username and password.
+- The password is hashed immediately using bcrypt.
+- The hashed password is stored in the database.
+- During login, the provided password is verified against the stored hash.
+- On success, `session['user_id']` is set.
+- On logout, session data is cleared.
 
-There are no tests for these methods, but you can verify they're set up properly by
-using `flask shell` and creating some users.
+No plaintext passwords are ever stored or returned.
 
-Once you have all methods created, commit your code.
+---
 
-#### Step 4: Create Signup Endpoint
+### Password Security
 
-Create `POST /signup` endpoint. Implement the following:
-- Create a new user. 
-- Save user to db with their hashed password using bcrypt.
-- Log the user in with sessions.
-- Return the user object.
+- Password hashes are stored in a private `_password_hash` column.
+- The `password_hash` property is **write-only**.
+- Attempting to read the password hash raises an exception.
+- Authentication uses bcrypt’s secure hash comparison.
 
-Test your logic with `pytest` and commit your code.
+This ensures:
+- No accidental password exposure
+- No reversible password storage
+- Industry-standard hashing practices
 
-#### Step 5: Create Check Session Endpoint
+---
 
-Create `GET /check_session` endpoint. Implement the following:
-- If the user is authenticated, return the user object in the JSON response. 
-- Else, return an empty response with a 204 status code.
+### Session Persistence
 
-Test your logic with `pytest` and commit your code.
+- Sessions persist across requests and page reloads.
+- Each client maintains its own session state.
+- Logging out removes all authentication-related session keys.
+- Session logic is enforced server-side and cannot be bypassed by the client.
 
-#### Step 6: Create Login Endpoint
+---
 
-Create `POST /login` endpoint. Implement the following:
-- Log the user in with sessions.
-- Returns the user as JSON.
+## API Endpoints
 
-Test your logic with `pytest` and commit your code.
+### Authentication Routes
 
-#### Step 7: Create Logout Endpoint
-  
-Create `DELETE /logout` endpoint. Implement the following:
-- Log the user out with sessions.
+#### `POST /signup`
 
-Test your logic with `pytest` and commit your code.
+Creates a new user account.
 
-#### Step 8: Commit and Push Git History
+**Behavior**
+- Accepts `username` and `password`
+- Hashes the password using bcrypt
+- Stores the new user in the database
 
-Once all tests are passing, `git commit` (if needed) and `git push` your final code
-to GitHub:
+**Response**
+- `201 Created` with user data
+- Password hash is never returned
 
-```bash
-git add .
-git commit -m "final solution"
-git push
-```
+---
 
-If you created a separate feature branch, remember to open a PR on main and merge.
+#### `POST /login`
 
-### Task 4: Document and Maintain
+Logs a user in.
 
-Optional Best Practice documentation steps:
-* Add comments to the code to explain purpose and logic, clarifying intent and 
-functionality of your code to other developers.
-* Update README text to reflect the functionality of the application following 
-https://makeareadme.com. 
-  * Add screenshot of completed work included in Markdown in README.
-* Delete any stale branches on GitHub
-* Remove unnecessary/commented out code
-* If needed, update git ignore to remove sensitive data
+**Behavior**
+- Retrieves the user by username
+- Verifies the password against the stored hash
+- Stores `user_id` in the session on success
 
-## Submit your solution
+**Response**
+- `200 OK` with user data
+- `401 Unauthorized` if credentials are invalid
 
-CodeGrade will use the same test suite as the test suite included.
+---
 
-Once all tests are passing, commit and push your work using `git` to submit to 
-CodeGrade through Canvas.
+#### `DELETE /logout`
+
+Logs the user out.
+
+**Behavior**
+- Removes `user_id` and related session data
+
+**Response**
+- `204 No Content`
+
+---
+
+#### `GET /check_session`
+
+Checks whether a user is currently authenticated.
+
+**Behavior**
+- If `user_id` exists in the session, returns the user
+- If no session exists, returns an empty response
+
+**Response**
+- `200 OK` with user data
+- `204 No Content` if not logged in
+
+---
+
+## Features
+
+- Secure password hashing with bcrypt
+- Write-only password storage
+- Session-based authentication
+- RESTful API design with Flask-RESTful
+- SQLAlchemy ORM with Marshmallow schemas
+- Backend-enforced authentication logic
+- Pytest-based automated testing
+- Clear separation of concerns
+
+---
+
+## How to Use
+
+### Setup
+
+- `pipenv install`
+- `pipenv shell`
+
+### Initialize the Database
+
+- `cd server`
+- `flask db upgrade`
+
+### Run the Backend
+
+- `python app.py`
+
+The API will run on:
+
+http://localhost:5555
+
+---
+
+## Testing
+
+Run all tests with:
+
+pytest
+
+---
+
+## Notes
+
+- Passwords are never stored or transmitted in plaintext.
+- Session data should never include sensitive information.
+- This lab focuses on backend security fundamentals that scale to larger systems.
+
+---
+
+## License
+
+Educational use only. Intended for learning secure authentication, password hashing, and Flask session management.
